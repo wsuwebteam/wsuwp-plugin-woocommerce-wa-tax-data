@@ -1,4 +1,4 @@
-<?php namespace WSUWP\Plugin\WSUWP\Plugin\WA_Tax_Query;
+<?php namespace WSUWP\Plugin\WA_Tax_Query;
 
 
 class Post_Content {
