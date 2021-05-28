@@ -50,7 +50,7 @@ class Plugin
 
 	public function init() 
 	{
-		add_action('admin_menu', array( $this, 'addToNav' ));
+		add_action('admin_menu', array( $self, 'addToNav' ));
 
 		/* NOTE: Here's where everything starts. You probably don't need to include/require additional files here 
 		* and just do everything in this class - for a more complex plugin you might want to separate functionality into it's own files. 
