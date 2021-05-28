@@ -1,8 +1,8 @@
-<?php namespace WSUWP\Plugin\WSUWP\Plugin\WA_Tax_Query;
-// NOTE: namespace should be WSUWP\Plugin\WA_Tax_Query;
+<?php namespace WSUWP\Plugin\WA_Tax_Query;
 
 
-class Plugin {
+class Plugin 
+{
 
 	protected static $version = '1.0.1';
 
@@ -11,7 +11,8 @@ class Plugin {
 	 *  Function to provide GET access to properties.
 	 * 
 	 ***************************/
-	public static function get( $property ) {
+	public static function get( $property ) 
+	{
 
 		switch ( $property ) {
 
@@ -37,7 +38,19 @@ class Plugin {
 
 	}
 
-	public function init() {
+	public static function addToNav() 
+	{
+		/***
+		 * 
+		 * 		This call appears to do nothing at all. I see nothing in the menu.*/
+		  		add_menu_page('WA Tax Data', 'WooTaxes', 'Administrator', 'wsuwp-plugin-woocommerce-wa-tax-data/template-parts/form.php', '', '', 5);
+		 /* 
+		 * 		add_options_page( 'WA Tax Data', 'WooTaxes', 'Administrator', 'wsuwp-plugin-woocommerce-wa-tax-data/template-parts/form.php');	*/	
+	}
+
+	public function init() 
+	{
+		add_action('admin_menu', array( $this, 'addToNav' ));
 
 		/* NOTE: Here's where everything starts. You probably don't need to include/require additional files here 
 		* and just do everything in this class - for a more complex plugin you might want to separate functionality into it's own files. 
@@ -63,7 +76,7 @@ class Plugin {
 		add_action( 'someactionpoint', array( __CLASS__, 'myactionpointmethod') );
 		*/
 
-
+		
 		//require_once __DIR__ . '/include-post-query.php';
 
 		//require_once __DIR__ . '/include-save-post.php';
@@ -76,13 +89,7 @@ class Plugin {
 		//}
 
 
-	}
-
-	/*
-	public static function myactionpointmethod() {
-		// do something here
-	}
-	*/
+	}	
 
 }
 
