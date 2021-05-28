@@ -43,14 +43,14 @@ class Plugin
 		/***
 		 * 
 		 * 		This call appears to do nothing at all. I see nothing in the menu.*/
-		  		add_menu_page('WA Tax Data', 'WooTaxes', 'administrator', array(__CLASS__, 'renderPage'), '', '', 5);
+		  		add_menu_page('WA Tax Data', 'WooTaxes', 'administrator', 'renderPage', '', '', 5);
 		 /* 
 		 * 		add_options_page( 'WA Tax Data', 'WooTaxes', 'Administrator', 'wsuwp-plugin-woocommerce-wa-tax-data/template-parts/form.php');	*/	
 	}
 
 	public static function renderPage()
 	{
-		//include (__CLASS__) ->get('template_dir').'/form.php';
+		include Plugin::get('template_dir').'/form.php';
 	}
 
 	public function init() 
