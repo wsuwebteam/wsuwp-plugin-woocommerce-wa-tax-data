@@ -40,6 +40,7 @@ class TaxQuery
             );
             fputcsv( $output, $modified_values );
         }
+        // Return download csv file
         header("Pragma: public");
         header("Expires: 0");
         header("Cache-Control: must-revalidate, post-check=0, pre-check=0");

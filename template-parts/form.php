@@ -1,7 +1,7 @@
 <?php
   if (!empty($_POST)) 
   {
-    WSUWP\Plugin\WA_Tax_Query\TaxQuery::Process($_POST['txtSDate'], $_POST['txtEDate']);
+    WSUWP\Plugin\WA_Tax_Query\TaxQuery::processTaxData($_POST['txtSDate'], $_POST['txtEDate']);
   }
   
 ?>
