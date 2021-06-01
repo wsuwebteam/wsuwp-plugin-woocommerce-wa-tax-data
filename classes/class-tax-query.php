@@ -18,7 +18,35 @@ class TaxQuery
         $StartDate = sanitize_text_field($StartDate);
         $EndDate = sanitize_text_field($EndDate);
         $TaxData = fetchTaxData($StartDate, $EndDate);
-        foreach ()
+        $result = $wpdb->get_results('SELECT * FROM     tp_users', ARRAY_A);
+        // process data from the db
+        $filename = 'TaxData' . " " . $StartDate . "--" . $EndDate;
+        $output = fopen('php://output', 'w');
+        fputcsv( $output, array('ID', 'Title', ' Date'));
+        foreach ( $result as $key => $value ) 
+        {
+            $modified_values = array(
+                        $value['Order_ID'],
+                        $value['Ship_Date'],
+                        $value['Customer_Name'],
+                        $value['Company_Name'],
+                        $value['Address_Line1'],
+                        $value['Address_Line2'],
+                        $value['City'],
+                        $value['State'],.
+                        $value['Zip'],
+                        $value['Tax'],
+                        $value['Tax_Code']
+            );
+            fputcsv( $output, $modified_values );
+        }
+        header("Pragma: public");
+        header("Expires: 0");
+        header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+        header("Cache-Control: private", false);
+        header('Content-Type: text/csv; charset=utf-8');
+        header("Content-Disposition: attachment; filename=\"" $filename .  ".csv\";" );
+        header("Content-Transfer-Encoding: binary");exit;
     }
 
     /*************************************
