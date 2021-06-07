@@ -3,7 +3,6 @@
   {
     $test = new WSUWP\Plugin\WA_Tax_Query\TaxQuery;
     $result = $test->processTaxData($_POST['txtSDate'], $_POST['txtEDate']);
-    echo("wtf is going on here now damnit<br/>");
     //var_dump($result);
     /* foreach ( $result as $key ) 
     {

@@ -14,8 +14,7 @@ class TaxQuery
      *   *** Maybe process here in a loop or process on display side.***
     ********************************/
     public static function processTaxData($StartDate = false, $EndDate = false) 
-    {
-
+    {        
         $query_args = array(
             'post_type' => 'shop_order',
             'post_status' => 'wc-completed',
@@ -25,33 +24,45 @@ class TaxQuery
                 array(
                     'key' => '_date_completed', // Check the start date field
                     //'value' => array('1617260400','1619766000'),//$StartDate, $EndDate), Tried a BETWEEN compare   
-                    'value' => date('Y-m-d', strtotime('20210401')),
+                    'value' => strtotime($StartDate),
                     //'value' => date($StartDate), // Start Date
                     'compare' => '>=', // Return the ones after the start date
-                    'type' => 'DATE' // Let WordPress know we're working with date
+                    'type' => 'integer' // Let WordPress know we're working with date
                 ),
                 array(
                     'key' => '_date_completed', // Check the start date field
-                    'value' => date('Y-m-d', strtotime('20210430')),
+                    'value' => strtotime($EndDate),
                     //'value' => date($EndDate), // End Date
                     'compare' => '<=', // Return the ones than the end date
-                    'type' => 'DATE' // Let WordPress know we're working with date
+                    'type' => 'integer' // Let WordPress know we're working with date
                     ) 
             ),
         );
-        var_dump($query_args);
 
         $orders = get_posts( $query_args );
-
-
-
+        //echo("<table>")
+        $F_Name = "";
+        $L_Name = "";
         foreach ( $orders as $order ) {
 
-            var_dump( $order );
-
-            var_dump( get_post_meta( $order->ID ) );
-
-            echo '<hr />';
+            $meta = get_post_meta( $order->ID );
+            foreach($meta as $details)
+            {
+                var_dump($details);
+                if(isset($details['_billing_first_name']))
+                {
+                    $F_Name = $details['_billing_first_name'];
+                }
+                elseif(isset($details['_billing_last_name']))
+                {
+                    $L_Name = $details['_billing_last_name'];
+                }
+            }
+            //var_dump($meta);
+            var_dump($F_Name);
+            var_dump($L_Name);
+            echo($F_Name . " " . $L_Name);
+            
 
             //echo '<li>' . $order->ID . ' ' . get_post_meta( $order->ID, '_order_tax', true ) . '</li>';
             // var_dump( $order );
@@ -115,5 +126,4 @@ class TaxQuery
 
         return $wpdb->get_results($strQString);
     }
-
 }
