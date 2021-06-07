@@ -6,6 +6,13 @@ class Plugin
 
 	protected static $version = '1.0.1';
 
+
+	public function __construct() {
+
+		require_once self::get('class_dir') . '/class-tax-query.php';
+
+	}
+
 	/****************************
 	 * 
 	 *  Function to provide GET access to properties.
@@ -82,7 +89,7 @@ class Plugin
 		*/
 
 		
-		//require_once __DIR__ . '/include-post-query.php';
+		
 
 		//require_once __DIR__ . '/include-save-post.php';
 

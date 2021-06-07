@@ -1,10 +1,25 @@
 <?php
   if (!empty($_POST)) 
   {
-    WSUWP\Plugin\WA_Tax_Query\TaxQuery::processTaxData($_POST['txtSDate'], $_POST['txtEDate']);
+    $test = new WSUWP\Plugin\WA_Tax_Query\TaxQuery;
+    $result = $test->processTaxData($_POST['txtSDate'], $_POST['txtEDate']);
+    echo("wtf is going on here now damnit<br/>");
+    //var_dump($result);
+    /* foreach ( $result as $key ) 
+    {
+        echo($key['post_id']);
+        echo($key['ShipDate']);
+        echo($key['CustomerFName'] . " " . $value['CustomerLName']); 
+        //echo("wtf is going on here now damnit");
+    } */
+    //::processTaxData();
   }
   
 ?>
+
+
+
+
 <script>
   $( function() {
     $( "#txtSDate" ).datepicker();
