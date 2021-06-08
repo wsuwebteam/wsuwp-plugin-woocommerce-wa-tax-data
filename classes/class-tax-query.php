@@ -2,11 +2,6 @@
 
 class TaxQuery
 {
-    public function __construct()
-    {
-
-    }
-
     /*******************************
      *   Get inputs start date and end date
      *   Sanitize user inputs
@@ -14,6 +9,97 @@ class TaxQuery
      *   *** Maybe process here in a loop or process on display side.***
     ********************************/
     public static function processTaxData($StartDate = false, $EndDate = false) 
+    {
+        /**********************
+         * Clean up user inputs
+         *********************/
+        $StartDate = sanitize_text_field($StartDate);
+        $EndDate = sanitize_text_field($EndDate);
+        
+        if(strtotime($StartDate) && strtotime($EndDate))
+        {
+            /**********************************
+            *   Set up file to download to user
+            **********************************/
+            $filename = 'TaxData' . " " . $StartDate . "--" . $EndDate;
+            $output = fopen('php://output', 'w');
+            fputcsv( $output, array('Order_ID', 'Ship_Date', 'Customer_Name', 'Company_Name', 'Address_Line1', 'Address_Line2', 'City', 'State', 'Zip', 'Tax', 'Tax_Code'));
+            $orders = self::fetchTaxData($StartDate, $EndDate);
+            /*************************************************
+             *  Set up each orders data to make an export row.
+             ************************************************/
+            foreach ( $orders as $order ) 
+            {            
+                $CustomoerFName = get_post_meta( $order->ID, '_shipping_first_name', true );
+                $CustomoerLName = get_post_meta( $order->ID, '_shipping_last_name', true );
+                $CompanyName = get_post_meta( $order->ID, '_shipping_company', true );
+                $AddressLine1 = get_post_meta( $order->ID, '_shipping_address_1', true );
+                $AddressLine2 = get_post_meta( $order->ID, '_shipping_address_1', true );
+                $City = get_post_meta( $order->ID, '_shipping_city', true );
+                $State = get_post_meta( $order->ID, '_shipping_state', true );
+                $Zip = get_post_meta( $order->ID, '_shipping_postcode', true );
+                $Tax = (double)get_post_meta( $order->ID, '_order_tax', true ) + (double)get_post_meta( $order->ID, '_order_shipping_tax', true );
+                $TaxCode = 
+                /******************************
+                 *  add datarow to the csv file
+                 *****************************/
+                $modified_values = array(
+                    $order->ID,
+                    $CustomoerFName . " " . $CustomoerLName,
+                    $CompanyName,
+                    $AddressLine1,
+                    $AddressLine2,
+                    $City,
+                    $State,
+                    $Zip,
+                    $Tax,                    
+                    $TaxCode
+                );
+        
+                fputcsv( $output, $modified_values );
+            }
+            header("Pragma: public");
+            header("Expires: 0");
+            header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+            header("Cache-Control: private", false);
+            header('Content-Type: text/csv; charset=utf-8');
+            header("Content-Disposition: attachment; filename=\"" . $filename .  ".csv\";" );
+            header("Content-Transfer-Encoding: binary");
+            exit;
+
+        }
+    }   
+    
+    /**********************************************
+     *  Remove or wrap to contain comma in csv file
+     *********************************************/
+    public static function RemoveComma ($input)
+    {
+
+    }
+
+    /***********************************
+     *  Get zip +4 from USPS web service
+     **********************************/
+    public static function zip4($Address, $City, $State, $Zip)
+    {
+
+    }
+
+    /*********************************************
+     *  Get tax code from WA State tax web service
+     ********************************************/
+    public static function fetchTaxCode($zip)
+    {
+
+    }
+
+    /*************************************
+     *  Using get posts with meta query to pull orders for the date range.
+     *  Return order data to calling object
+     *  Returns customer order information to process. This returns all completed orders within the date range. 
+     *************************************/
+    public static function fetchTaxData($StartDate, $EndDate)
     {        
         $query_args = array(
             'post_type' => 'shop_order',
@@ -40,36 +126,10 @@ class TaxQuery
         );
 
         $orders = get_posts( $query_args );
-        //echo("<table>")
-        $F_Name = "";
-        $L_Name = "";
-        foreach ( $orders as $order ) {
 
-            $meta = get_post_meta( $order->ID );
-            foreach($meta as $details)
-            {
-                var_dump($details);
-                if(isset($details['_billing_first_name']))
-                {
-                    $F_Name = $details['_billing_first_name'];
-                }
-                elseif(isset($details['_billing_last_name']))
-                {
-                    $L_Name = $details['_billing_last_name'];
-                }
-            }
-            //var_dump($meta);
-            var_dump($F_Name);
-            var_dump($L_Name);
-            echo($F_Name . " " . $L_Name);
-            
-
-            //echo '<li>' . $order->ID . ' ' . get_post_meta( $order->ID, '_order_tax', true ) . '</li>';
-            // var_dump( $order );
-            // see all meta var_dump( get_post_meta( $order->ID ) )
-        }
-
-
+        return $orders;
+    }
+}
         /*// Clean up the user passed parms
         $StartDate = sanitize_text_field($StartDate);
         $EndDate = sanitize_text_field($EndDate);
@@ -107,23 +167,3 @@ class TaxQuery
         header('Content-Type: text/csv; charset=utf-8');
         header("Content-Disposition: attachment; filename=\"" . $filename .  ".csv\";" );
         header("Content-Transfer-Encoding: binary");exit;*/
-    }
-
-    /*************************************
-     *  Use wpdb object to rund SQL query to pull tax data
-     *  Return tax data to calling object
-     *  Returns customer address information used to calclulate taxes along with state tax codes identifying tax zones to set amounts.
-     *************************************/
-    public static function fetchTaxData($StartDate, $EndDate)
-    {        
-        global $wpdb;
-        $strQString = "SELECT p.post_id, MAX(CASE WHEN pm.meta_key = '_date_completed' THEN FROM_UNIXTIME(pm.meta_value) END) as ShipDate, MAX(CASE WHEN pm.meta_key = '_shipping_first_name' THEN pm.meta_value END) as CustomerFName, ";
-        $strQString .= "MAX(CASE WHEN pm.meta_key = '_shipping_last_name' THEN pm.meta_value END) as CustomerLName, MAX(CASE WHEN pm.meta_key = '_shipping_company' THEN pm.meta_value END) as CompanyName, MAX(CASE WHEN pm.meta_key = '_shipping_address_1' THEN pm.meta_value END) as AddressLine1, ";
-        $strQString .= "MAX(CASE WHEN pm.meta_key = '_shipping_address_2' THEN pm.meta_value END) as AddressLine2, MAX(CASE WHEN pm.meta_key = '_shipping_city' THEN pm.meta_value END) as City, MAX(CASE WHEN pm.meta_key = '_shipping_state' THEN pm.meta_value END) as State, ";
-        $strQString .= "MAX(CASE WHEN pm.meta_key = '_shipping_postcode' THEN pm.meta_value END) as Zip, MAX(CASE WHEN pm.meta_key = '_order_tax' THEN pm.meta_value END) as Tax, MAX(CASE WHEN pm.meta_key = '_order_shipping_tax' THEN pm.meta_value END) as ShippingTax ";
-        $strQString .= "FROM local.wp_postmeta p JOIN local.wp_postmeta pm ON p.post_id = pm.post_id WHERE p.post_id IN(SELECT pp.ID FROM local.wp_posts pp WHERE pp.post_type = 'shop_order' AND pp.post_status = 'wc-completed') ";
-        $strQString .= "AND p.meta_key = '_date_completed' AND p.meta_value BETWEEN UNIX_TIMESTAMP($StartDate) AND UNIX_TIMESTAMP($EndDate) GROUP BY p.post_id";
-
-        return $wpdb->get_results($strQString);
-    }
-}
