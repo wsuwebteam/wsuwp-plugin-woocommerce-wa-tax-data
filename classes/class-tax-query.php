@@ -25,39 +25,8 @@ class TaxQuery
             $output = fopen('php://output', 'w');
             fputcsv( $output, array('Order_ID', 'Ship_Date', 'Customer_Name', 'Company_Name', 'Address_Line1', 'Address_Line2', 'City', 'State', 'Zip', 'Tax', 'Tax_Code'));
             $orders = self::fetchTaxData($StartDate, $EndDate);
-            /*************************************************
-             *  Set up each orders data to make an export row.
-             ************************************************/
-            foreach ( $orders as $order ) 
-            {            
-                $CustomoerFName = get_post_meta( $order->ID, '_shipping_first_name', true );
-                $CustomoerLName = get_post_meta( $order->ID, '_shipping_last_name', true );
-                $CompanyName = get_post_meta( $order->ID, '_shipping_company', true );
-                $AddressLine1 = get_post_meta( $order->ID, '_shipping_address_1', true );
-                $AddressLine2 = get_post_meta( $order->ID, '_shipping_address_1', true );
-                $City = get_post_meta( $order->ID, '_shipping_city', true );
-                $State = get_post_meta( $order->ID, '_shipping_state', true );
-                $Zip = get_post_meta( $order->ID, '_shipping_postcode', true );
-                $Tax = (double)get_post_meta( $order->ID, '_order_tax', true ) + (double)get_post_meta( $order->ID, '_order_shipping_tax', true );
-                $TaxCode = 
-                /******************************
-                 *  add datarow to the csv file
-                 *****************************/
-                $modified_values = array(
-                    $order->ID,
-                    $CustomoerFName . " " . $CustomoerLName,
-                    $CompanyName,
-                    $AddressLine1,
-                    $AddressLine2,
-                    $City,
-                    $State,
-                    $Zip,
-                    $Tax,                    
-                    $TaxCode
-                );
-        
-                fputcsv( $output, $modified_values );
-            }
+            self::SetUpCSV($orders);
+            
             header("Pragma: public");
             header("Expires: 0");
             header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
@@ -70,12 +39,64 @@ class TaxQuery
         }
     }   
     
+    /**********************************************************
+     *  Broke out to shorten function. Works as it's own piece.
+     *********************************************************/
+    public static function SetUpCSV ($orders)
+    {
+        /*************************************************
+         *  Set up each orders data to make an export row.
+         ************************************************/
+        foreach ( $orders as $order ) 
+        {            
+            $OrderID = $order->Id;
+            $ShipDate = get_post_meta( $order->ID, '_date_completed', true );
+            $CustomoerFName = get_post_meta( $order->ID, '_shipping_first_name', true );
+            $CustomoerLName = get_post_meta( $order->ID, '_shipping_last_name', true );
+            $CompanyName = get_post_meta( $order->ID, '_shipping_company', true );
+            $AddressLine1 = get_post_meta( $order->ID, '_shipping_address_1', true );
+            $AddressLine2 = get_post_meta( $order->ID, '_shipping_address_2', true );
+            $City = get_post_meta( $order->ID, '_shipping_city', true );
+            $State = get_post_meta( $order->ID, '_shipping_state', true );
+            $Zip = get_post_meta( $order->ID, '_shipping_postcode', true );
+            $Zip4 = "";
+            if (!strpos($Zip, '-') && $State == 'WA')
+            {
+                $Zip4 = self::zip4($AddressLine1, $City, $State, $Zip);
+                $Zip .= "-" . $Zip4;
+            }
+            $Tax = (Float)get_post_meta( $order->ID, '_order_tax', true ) + (float)get_post_meta( $order->ID, '_order_shipping_tax', true );
+            $TaxCode = "";
+            /******************************
+             *  add datarow to the csv file
+             *****************************/
+            $modified_values = array(
+                $order->ID,
+                $ShipDate,
+                $CustomoerFName . " " . $CustomoerLName,
+                $CompanyName,
+                $AddressLine1,
+                $AddressLine2,
+                $City,
+                $State,
+                $Zip,
+                $Tax,                    
+                $TaxCode
+            );
+    
+            fputcsv( $output, $modified_values );
+        }
+    }
     /**********************************************
      *  Remove or wrap to contain comma in csv file
      *********************************************/
-    public static function RemoveComma ($input)
+    public static function RemoveCommas ($input)
     {
-
+        if(str_contains($input, ','))
+        {
+            $input = str_replace(',', '', $input);            
+        }
+        return $input;
     }
 
     /***********************************
@@ -83,7 +104,24 @@ class TaxQuery
      **********************************/
     public static function zip4($Address, $City, $State, $Zip)
     {
+        $request_XML = <<<EOT
+             <AddressValidateRequest USERID="775WASHI4754"><Address ID="0"><Address1></Address1><Address2>
+             EOT;
+        $request_XML .= $Address;           
+        $request_XML .= "</Address2><City>";        
+        $request_XML .= $City;
+        $request_XML .= "</City><State>";
+        $request_XML .= $State;
+        $request_XML .= "</State><Zip5>";
+        $request_XML .= $Zip;
+        $request_XML .= "</Zip5><Zip4></Zip4></Address></AddressValidateRequest>";
+        $request_XML = urlencode($request_XML);
 
+        $url = "http://production.shippingapis.com/ShippingAPI.dll?API=Verify&XML=" . $request_XML;
+        $response = file_get_contents($url);
+        $responseXML = simplexml_load_string($response);
+
+        return $responseXML->Address->Zip4;
     }
 
     /*********************************************
@@ -103,6 +141,7 @@ class TaxQuery
     {        
         $query_args = array(
             'post_type' => 'shop_order',
+            'numberposts' => '-1',
             'post_status' => 'wc-completed',
             'meta_key' => '_date_completed',
             'meta_query' => array( // WordPress has all the results, now, return only the events after today's date
