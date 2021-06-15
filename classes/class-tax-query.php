@@ -24,33 +24,33 @@ class TaxQuery
             $filename = 'TaxData' . " " . $StartDate . "--" . $EndDate;
             $output = fopen('php://output', 'w');
             fputcsv( $output, array('Order_ID', 'Ship_Date', 'Customer_Name', 'Company_Name', 'Address_Line1', 'Address_Line2', 'City', 'State', 'Zip', 'Tax', 'Tax_Code'));
-            $orders = self::fetchTaxData($StartDate, $EndDate);
-            self::SetUpCSV($orders);
+            $orders = self::FetchTaxData($StartDate, $EndDate);
+            self::SetUpCSV($orders, $output);
             
-            header("Pragma: public");
+            /* header("Pragma: public");
             header("Expires: 0");
             header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             header("Cache-Control: private", false);
             header('Content-Type: text/csv; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"" . $filename .  ".csv\";" );
             header("Content-Transfer-Encoding: binary");
-            exit;
+            exit; */
 
         }
     }   
     
-    /**********************************************************
-     *  Broke out to shorten function. Works as it's own piece.
+     /**********************************************************
+     *  Create the .csv file to export
      *********************************************************/
-    public static function SetUpCSV ($orders)
+    public static function SetUpCSV ($orders, $output)
     {
         /*************************************************
          *  Set up each orders data to make an export row.
          ************************************************/
         foreach ( $orders as $order ) 
-        {            
-            $OrderID = $order->Id;
-            $ShipDate = get_post_meta( $order->ID, '_date_completed', true );
+        {   
+            $OrderID = $order->ID;
+            $ShipDate = date("m/d/Y", get_post_meta( $order->ID, '_date_completed', true ));//get_post_meta( $order->ID, '_date_completed', true );            
             $CustomoerFName = get_post_meta( $order->ID, '_shipping_first_name', true );
             $CustomoerLName = get_post_meta( $order->ID, '_shipping_last_name', true );
             $CompanyName = get_post_meta( $order->ID, '_shipping_company', true );
@@ -67,11 +67,16 @@ class TaxQuery
             }
             $Tax = (Float)get_post_meta( $order->ID, '_order_tax', true ) + (float)get_post_meta( $order->ID, '_order_shipping_tax', true );
             $TaxCode = "";
+            if($State === 'WA')
+            {
+                $testcode = self::FetchTaxCode($AddressLine1, $City, $Zip);   
+            }                    
+            
             /******************************
              *  add datarow to the csv file
              *****************************/
-            $modified_values = array(
-                $order->ID,
+             $modified_values = array(
+                $OrderID,
                 $ShipDate,
                 $CustomoerFName . " " . $CustomoerLName,
                 $CompanyName,
@@ -81,9 +86,9 @@ class TaxQuery
                 $State,
                 $Zip,
                 $Tax,                    
-                $TaxCode
+                $TaxCode 
             );
-    
+            //var_dump($modified_values);
             fputcsv( $output, $modified_values );
         }
     }
@@ -127,9 +132,23 @@ class TaxQuery
     /*********************************************
      *  Get tax code from WA State tax web service
      ********************************************/
-    public static function fetchTaxCode($zip)
+    public static function FetchTaxCode($Address, $City, $Zip)
     {
-
+        $TaxCode = "";
+        // URL for WA tax API
+        echo(urlencode($Address) . "&city=" . urlencode($City) . "&zip=" . urlencode($Zip) . "<br/>");
+        $URL = "https://webgis.dor.wa.gov/webapi/AddressRates.aspx?output=text&addr=" . urlencode($Address) . "&city=" . urlencode($City) . "&zip=" . urlencode($Zip);
+        echo($URL . "<br/>");
+        $response = wp_remote_get($url);
+        var_dump($response);
+        if(! is_wp_error($response))
+        {
+            $responseXML = new SimpleXMLElement($response['body']);
+        }
+        //$responseXML = simplexml_load_string($response);
+        var_dump($responseXML);
+        
+        return $responseXML;
     }
 
     /*************************************
@@ -137,29 +156,26 @@ class TaxQuery
      *  Return order data to calling object
      *  Returns customer order information to process. This returns all completed orders within the date range. 
      *************************************/
-    public static function fetchTaxData($StartDate, $EndDate)
+    public static function FetchTaxData($StartDate, $EndDate)
     {        
         $query_args = array(
             'post_type' => 'shop_order',
             'numberposts' => '-1',
             'post_status' => 'wc-completed',
             'meta_key' => '_date_completed',
-            'meta_query' => array( // WordPress has all the results, now, return only the events after today's date
+            'meta_query' => array( 
                 'relation' => 'AND',
                 array(
                     'key' => '_date_completed', // Check the start date field
-                    //'value' => array('1617260400','1619766000'),//$StartDate, $EndDate), Tried a BETWEEN compare   
                     'value' => strtotime($StartDate),
-                    //'value' => date($StartDate), // Start Date
                     'compare' => '>=', // Return the ones after the start date
-                    'type' => 'integer' // Let WordPress know we're working with date
+                    'type' => 'integer'
                 ),
                 array(
-                    'key' => '_date_completed', // Check the start date field
+                    'key' => '_date_completed', // Check the end date field
                     'value' => strtotime($EndDate),
-                    //'value' => date($EndDate), // End Date
-                    'compare' => '<=', // Return the ones than the end date
-                    'type' => 'integer' // Let WordPress know we're working with date
+                    'compare' => '<=', // Return the ones before the end date
+                    'type' => 'integer'
                     ) 
             ),
         );
@@ -169,40 +185,4 @@ class TaxQuery
         return $orders;
     }
 }
-        /*// Clean up the user passed parms
-        $StartDate = sanitize_text_field($StartDate);
-        $EndDate = sanitize_text_field($EndDate);
-        //fetch data from the database.
-        $TaxData = self::fetchTaxData($StartDate, $EndDate);
-        // process data from the db
-        $filename = 'TaxData' . " " . $StartDate . "--" . $EndDate;
-        $output = fopen('php://output', 'w');
-        fputcsv( $output, array('Order_ID', 'Ship_Date', 'Customer_Name', 'Company_Name', 'Address_Line1', 'Address_Line2', 'City', 'State', 'Zip', 'Tax', 'Tax_Code'));
-        foreach ( $TaxData as $key => $value ) 
-        {
-            $modified_values = array(
-                        $value['post_id'],
-                        $value['ShipDate'],
-                        $value['CustomerFName'] . " " . $value['CustomerLName'],
-                        $value['Company_Name'],
-                        $value['Address_Line1'],
-                        $value['Address_Line2'],
-                        $value['City'],
-                        $value['State'],
-                        $value['Zip'],
-                        $value['Tax'],
-                        $value['Tax_Code']
-            );
-            
-            fputcsv( $output, $modified_values );
-        } 
-        return $TaxData;
-        //var_dump($TaxData[0][0]);
-        // Return download csv file
-        /*header("Pragma: public");
-        header("Expires: 0");
-        header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-        header("Cache-Control: private", false);
-        header('Content-Type: text/csv; charset=utf-8');
-        header("Content-Disposition: attachment; filename=\"" . $filename .  ".csv\";" );
-        header("Content-Transfer-Encoding: binary");exit;*/
+
