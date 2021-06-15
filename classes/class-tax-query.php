@@ -27,14 +27,14 @@ class TaxQuery
             $orders = self::FetchTaxData($StartDate, $EndDate);
             self::SetUpCSV($orders, $output);
             
-            /* header("Pragma: public");
+            header("Pragma: public");
             header("Expires: 0");
             header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
             header("Cache-Control: private", false);
             header('Content-Type: text/csv; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"" . $filename .  ".csv\";" );
             header("Content-Transfer-Encoding: binary");
-            exit; */
+            exit;
 
         }
     }   
@@ -66,10 +66,9 @@ class TaxQuery
                 $Zip .= "-" . $Zip4;
             }
             $Tax = (Float)get_post_meta( $order->ID, '_order_tax', true ) + (float)get_post_meta( $order->ID, '_order_shipping_tax', true );
-            $TaxCode = "";
             if($State === 'WA')
             {
-                $testcode = self::FetchTaxCode($AddressLine1, $City, $Zip);   
+                $TaxCode = self::FetchTaxCode($AddressLine1, $City, $Zip);   
             }                    
             
             /******************************
@@ -136,19 +135,24 @@ class TaxQuery
     {
         $TaxCode = "";
         // URL for WA tax API
-        echo(urlencode($Address) . "&city=" . urlencode($City) . "&zip=" . urlencode($Zip) . "<br/>");
         $URL = "https://webgis.dor.wa.gov/webapi/AddressRates.aspx?output=text&addr=" . urlencode($Address) . "&city=" . urlencode($City) . "&zip=" . urlencode($Zip);
-        echo($URL . "<br/>");
-        $response = wp_remote_get($url);
-        var_dump($response);
+        $response = wp_remote_get($URL);
         if(! is_wp_error($response))
         {
-            $responseXML = new SimpleXMLElement($response['body']);
+            $responseXML = $response['body'];
         }
-        //$responseXML = simplexml_load_string($response);
-        var_dump($responseXML);
+        else
+        {
+            echo("error in web get: <br/>");
+        }
         
-        return $responseXML;
+        
+        if(strpos($responseXML, 'LocationCode=') > -1)
+        {
+            $output = substr($responseXML, 13, strpos($responseXML, " ") - 13);
+        }
+        
+        return $output;
     }
 
     /*************************************
