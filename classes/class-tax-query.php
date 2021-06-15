@@ -69,7 +69,11 @@ class TaxQuery
             if($State === 'WA')
             {
                 $TaxCode = self::FetchTaxCode($AddressLine1, $City, $Zip);   
-            }                    
+            }     
+            else
+            {
+                $TaxCode = "";
+            }               
             
             /******************************
              *  add datarow to the csv file
