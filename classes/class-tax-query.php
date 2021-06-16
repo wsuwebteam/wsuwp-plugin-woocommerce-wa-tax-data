@@ -2,6 +2,8 @@
 
 class TaxQuery
 {
+
+
     /*******************************
      *   Get inputs start date and end date
      *   Sanitize user inputs
@@ -21,63 +23,99 @@ class TaxQuery
             /**********************************
             *   Set up file to download to user
             **********************************/
-            $filename = 'TaxData' . " " . $StartDate . "--" . $EndDate;
+           /*  $filename = 'TaxData' . " " . $StartDate . "--" . $EndDate;
             $output = fopen('php://output', 'w');
-            fputcsv( $output, array('Order_ID', 'Ship_Date', 'Customer_Name', 'Company_Name', 'Address_Line1', 'Address_Line2', 'City', 'State', 'Zip', 'Tax', 'Tax_Code'));
+            fputcsv( $output, array('Order_ID', 'Ship_Date', 'Customer_Name', 'Company_Name', 'Address_Line1', 'Address_Line2', 'City', 'State', 'Zip', 'Tax', 'Tax_Code')); */
             $orders = self::FetchTaxData($StartDate, $EndDate);
-            self::SetUpCSV($orders, $output);
-            
-            header("Pragma: public");
+            $Output = self::SetUpCSV($orders);
+            return $Output; 
+            /* header("Pragma: public");
             header("Expires: 0");
             header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-            header("Cache-Control: private", false);
+            header("Cache-Control: private", false); 
             header('Content-Type: text/csv; charset=utf-8');
             header("Content-Disposition: attachment; filename=\"" . $filename .  ".csv\";" );
             header("Content-Transfer-Encoding: binary");
-            exit;
+            exit;*/
 
         }
     }   
     
+    /***************** 
+    * Build table head
+    *****************/
+    public static function TableStart()
+    {
+        $Head = "<table>";
+        $Head .= "<thead><tr><th>Order ID</th><th>Shipping Date</th><th>Customer Name</th><th>Company Name</th>";
+        $Head .= "<th>Address Line 1</th><th>Address Line 2</th><th>City</th><th>State</th><th>Zip</th><th>Tax</th>";
+        $Head .= "<th>Tax Code</th></tr></thead><tbody>";
+        return $Head;
+    }
+
+    /******************
+     *  Close the table
+     *****************/
+    public static function TableStop()
+    {
+        return "</tbody></table>";
+    }
+
+    /*****************
+     *  Output the row
+     ****************/
+    public static function OutputTableRow($orderID)
+    {
+        $Row = "";
+        $ShipDate = date("m/d/Y", get_post_meta( $orderID, '_date_completed', true ));//get_post_meta( $order->ID, '_date_completed', true );            
+        $CustomerName = get_post_meta( $orderID, '_shipping_first_name', true ) . " " . get_post_meta( $orderID, '_shipping_last_name', true );
+        $CompanyName = get_post_meta( $orderID, '_shipping_company', true );
+        $AddressLine1 = get_post_meta( $orderID, '_shipping_address_1', true );
+        $AddressLine2 = get_post_meta( $orderID, '_shipping_address_2', true );
+        $City = get_post_meta( $orderID, '_shipping_city', true );
+        $State = get_post_meta( $orderID, '_shipping_state', true );
+        $Zip = get_post_meta( $orderID, '_shipping_postcode', true );
+        $Zip4 = "";
+        if (!strpos($Zip, '-') && $State == 'WA')
+        {
+            $Zip4 = self::zip4($AddressLine1, $City, $State, $Zip);                
+            $Zip .= "-" . $Zip4;
+        }
+        $Tax = (Float)get_post_meta( $orderID, '_order_tax', true ) + (float)get_post_meta( $orderID, '_order_shipping_tax', true );
+        if($State === 'WA')
+        {
+            $TaxCode = self::FetchTaxCode($AddressLine1, $City, $Zip);   
+        }     
+        else
+        {
+            $TaxCode = "";
+        } 
+        $Row = "<tr><td>" . $orderID . "</td><td>" . $ShipDate . "</td><td>" . $CustomerName . "</td><td>" .  $CompanyName;
+        $Row .= "</td><td>" .  $AddressLine1 . "</td><td>"  . $AddressLine2 . "</td><td>" . $City . "</td><td>"  . $State;
+        $Row .= "</td><td>" .  $Zip .  "</td><td>"  . $Tax . "</td><td>"  . $TaxCode  . "</td></tr>";
+        return $Row;
+    }
+
      /**********************************************************
      *  Create the .csv file to export
      *********************************************************/
-    public static function SetUpCSV ($orders, $output)
+    public static function SetUpCSV ($orders)
     {
+        $TableOut = "";
+        //  Start output layout
+        $TableOut = self::TableStart();
+
         /*************************************************
          *  Set up each orders data to make an export row.
          ************************************************/
         foreach ( $orders as $order ) 
         {   
             $OrderID = $order->ID;
-            $ShipDate = date("m/d/Y", get_post_meta( $order->ID, '_date_completed', true ));//get_post_meta( $order->ID, '_date_completed', true );            
-            $CustomoerFName = get_post_meta( $order->ID, '_shipping_first_name', true );
-            $CustomoerLName = get_post_meta( $order->ID, '_shipping_last_name', true );
-            $CompanyName = get_post_meta( $order->ID, '_shipping_company', true );
-            $AddressLine1 = get_post_meta( $order->ID, '_shipping_address_1', true );
-            $AddressLine2 = get_post_meta( $order->ID, '_shipping_address_2', true );
-            $City = get_post_meta( $order->ID, '_shipping_city', true );
-            $State = get_post_meta( $order->ID, '_shipping_state', true );
-            $Zip = get_post_meta( $order->ID, '_shipping_postcode', true );
-            $Zip4 = "";
-            if (!strpos($Zip, '-') && $State == 'WA')
-            {
-                $Zip4 = self::zip4($AddressLine1, $City, $State, $Zip);
-                $Zip .= "-" . $Zip4;
-            }
-            $Tax = (Float)get_post_meta( $order->ID, '_order_tax', true ) + (float)get_post_meta( $order->ID, '_order_shipping_tax', true );
-            if($State === 'WA')
-            {
-                $TaxCode = self::FetchTaxCode($AddressLine1, $City, $Zip);   
-            }     
-            else
-            {
-                $TaxCode = "";
-            }               
+            $TableOut .= self::OutputTableRow($OrderID);
             
             /******************************
              *  add datarow to the csv file
-             *****************************/
+             ****************************
              $modified_values = array(
                 $OrderID,
                 $ShipDate,
@@ -92,8 +130,12 @@ class TaxQuery
                 $TaxCode 
             );
             //var_dump($modified_values);
-            fputcsv( $output, $modified_values );
+            fputcsv( $output, $modified_values );*/
         }
+
+        // close the table
+        $TableOut .= self::TableStop();
+        return $TableOut;
     }
     /**********************************************
      *  Remove or wrap to contain comma in csv file
@@ -128,8 +170,14 @@ class TaxQuery
         $url = "http://production.shippingapis.com/ShippingAPI.dll?API=Verify&XML=" . $request_XML;
         $response = file_get_contents($url);
         $responseXML = simplexml_load_string($response);
-
-        return $responseXML->Address->Zip4;
+        if($responseXML->Address->Zip4 != "")
+        {
+            return $responseXML->Address->Zip4;
+        }
+        else
+        {
+            return "0000";
+        }
     }
 
     /*********************************************
@@ -141,6 +189,7 @@ class TaxQuery
         // URL for WA tax API
         $URL = "https://webgis.dor.wa.gov/webapi/AddressRates.aspx?output=text&addr=" . urlencode($Address) . "&city=" . urlencode($City) . "&zip=" . urlencode($Zip);
         $response = wp_remote_get($URL);
+
         if(! is_wp_error($response))
         {
             $responseXML = $response['body'];
@@ -148,14 +197,13 @@ class TaxQuery
         else
         {
             echo("error in web get: <br/>");
-        }
-        
+        }        
         
         if(strpos($responseXML, 'LocationCode=') > -1)
         {
             $output = substr($responseXML, 13, strpos($responseXML, " ") - 13);
         }
-        
+
         return $output;
     }
 

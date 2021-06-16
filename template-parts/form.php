@@ -1,24 +1,15 @@
-<?php
-  if (!empty($_POST)) 
-  {
-    $test = new WSUWP\Plugin\WA_Tax_Query\TaxQuery;
-    $result = $test->processTaxData($_POST['txtSDate'], $_POST['txtEDate']);
-    //var_dump($result);
-    /* foreach ( $result as $key ) 
-    {
-        echo($key['post_id']);
-        echo($key['ShipDate']);
-        echo($key['CustomerFName'] . " " . $value['CustomerLName']); 
-        //echo("wtf is going on here now damnit");
-    } */
-    //::processTaxData();
+<style>
+  table{
+    width: 80%;
+    border-collapse: collapse;
   }
-  
-?>
-
-
-
-
+  table, td, th {
+  border: 1px solid black;
+  }
+  td{
+    text-align: left;
+  }
+</style>
 <script>
   $( function() {
     $( "#txtSDate" ).datepicker();
@@ -35,3 +26,23 @@
   <input type="text" id="txtEDate" name="txtEDate"></input>
   <input type="submit" value="Submit"/>
 </form>
+<div style="padding-top: 50px;">
+<?php
+  if (!empty($_POST)) 
+  {
+    $test = new WSUWP\Plugin\WA_Tax_Query\TaxQuery;
+    $result = $test->processTaxData($_POST['txtSDate'], $_POST['txtEDate']);
+    echo($result);
+    //var_dump($result);
+    /* foreach ( $result as $key ) 
+    {
+        echo($key['post_id']);
+        echo($key['ShipDate']);
+        echo($key['CustomerFName'] . " " . $value['CustomerLName']); 
+        //echo("wtf is going on here now damnit");
+    } */
+    //::processTaxData();
+  }
+  
+?>
+</div>
