@@ -2,8 +2,7 @@
 
 class TaxQuery
 {
-
-
+    var $AggrgateTax;
     /*******************************
      *   Get inputs start date and end date
      *   Sanitize user inputs
@@ -12,6 +11,7 @@ class TaxQuery
     ********************************/
     public static function processTaxData($StartDate = false, $EndDate = false) 
     {
+        $AggregateTaxes = array();
         /**********************
          * Clean up user inputs
          *********************/
@@ -27,8 +27,8 @@ class TaxQuery
             $output = fopen('php://output', 'w');
             fputcsv( $output, array('Order_ID', 'Ship_Date', 'Customer_Name', 'Company_Name', 'Address_Line1', 'Address_Line2', 'City', 'State', 'Zip', 'Tax', 'Tax_Code')); */
             $orders = self::FetchTaxData($StartDate, $EndDate);
-            $Output = self::SetUpCSV($orders);
-            return $Output; 
+            $Output = self::SetUpTable($orders, $AggregateTaxes); 
+            return self::SetUpTaxAggregate($AggregateTaxes) . $Output; 
             /* header("Pragma: public");
             header("Expires: 0");
             header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
@@ -40,6 +40,17 @@ class TaxQuery
 
         }
     }   
+
+    public static function SetUpTaxAggregate($InputArray)
+    {
+        $output = "<div><table style='width: 40%;'><thead><tr><th>Tax Code</th><th>Tax Collected</th><tr></thead><tbody><tr>";
+        foreach($InputArray as $key => $value)
+        {
+            $output .= "<tr><td>" . $key . "</td><td>" . $value . "</td></tr>";
+        }
+        $output .= "</tbody></table></div>";
+        return $output;
+    }
     
     /***************** 
     * Build table head
@@ -64,7 +75,7 @@ class TaxQuery
     /*****************
      *  Output the row
      ****************/
-    public static function OutputTableRow($orderID)
+    public static function OutputTableRow($orderID, &$TaxAggregate)
     {
         $Row = "";
         $ShipDate = date("m/d/Y", get_post_meta( $orderID, '_date_completed', true ));//get_post_meta( $order->ID, '_date_completed', true );            
@@ -84,7 +95,8 @@ class TaxQuery
         $Tax = (Float)get_post_meta( $orderID, '_order_tax', true ) + (float)get_post_meta( $orderID, '_order_shipping_tax', true );
         if($State === 'WA')
         {
-            $TaxCode = self::FetchTaxCode($AddressLine1, $City, $Zip);   
+            $TaxCode = self::FetchTaxCode($AddressLine1, $City, $Zip);
+            self::AggregateTaxPaid($TaxCode, $Tax, $TaxAggregate);
         }     
         else
         {
@@ -96,10 +108,50 @@ class TaxQuery
         return $Row;
     }
 
+    /************************************************************************************
+     *  Makes aggregate of taxes paid to each tax code. Places key value in global array.
+     ***********************************************************************************/
+    public static function AggregateTaxPaid($code, $tax, &$AggrgateTaxPaid)
+    {
+        $code = strval($code);
+        if ( ! is_array( $AggrgateTaxPaid ) ) {
+
+            $AggrgateTaxPaid = array();
+
+        }
+
+        if ( array_key_exists( $code, $AggrgateTaxPaid ) ) {
+
+            $AggrgateTaxPaid[$code] = (float)$AggrgateTaxPaid[$code] + (float)$tax;
+
+        } else {
+
+            $AggrgateTaxPaid[$code] = (float)$tax;
+
+        }
+
+
+        /*if(is_null($AggrgateTaxPaid))
+        {
+            $AggrgateTaxPaid = array($code => $tax);
+        }
+        else
+        {
+            if(array_key_exists($code, $AggrgateTaxPaid))
+            {
+                $AggrgateTaxPaid[$code] = (float)$AggrgateTaxPaid[$code] + (float)$tax;
+            }
+            else
+            {
+                array_push($AggrgateTaxPaid, array($code => $tax));
+            }
+        }  */      
+    }
+
      /**********************************************************
      *  Create the .csv file to export
      *********************************************************/
-    public static function SetUpCSV ($orders)
+    public static function SetUpTable($orders, &$TaxByCode)
     {
         $TableOut = "";
         //  Start output layout
@@ -111,7 +163,7 @@ class TaxQuery
         foreach ( $orders as $order ) 
         {   
             $OrderID = $order->ID;
-            $TableOut .= self::OutputTableRow($OrderID);
+            $TableOut .= self::OutputTableRow($OrderID, $TaxByCode);
             
             /******************************
              *  add datarow to the csv file
