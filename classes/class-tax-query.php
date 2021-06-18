@@ -129,23 +129,6 @@ class TaxQuery
             $AggrgateTaxPaid[$code] = (float)$tax;
 
         }
-
-
-        /*if(is_null($AggrgateTaxPaid))
-        {
-            $AggrgateTaxPaid = array($code => $tax);
-        }
-        else
-        {
-            if(array_key_exists($code, $AggrgateTaxPaid))
-            {
-                $AggrgateTaxPaid[$code] = (float)$AggrgateTaxPaid[$code] + (float)$tax;
-            }
-            else
-            {
-                array_push($AggrgateTaxPaid, array($code => $tax));
-            }
-        }  */      
     }
 
      /**********************************************************
