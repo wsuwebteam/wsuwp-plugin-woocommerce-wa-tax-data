@@ -32,16 +32,7 @@
   {
     $test = new WSUWP\Plugin\WA_Tax_Query\TaxQuery;
     $result = $test->processTaxData($_POST['txtSDate'], $_POST['txtEDate']);
-    echo($result);
-    //var_dump($result);
-    /* foreach ( $result as $key ) 
-    {
-        echo($key['post_id']);
-        echo($key['ShipDate']);
-        echo($key['CustomerFName'] . " " . $value['CustomerLName']); 
-        //echo("wtf is going on here now damnit");
-    } */
-    //::processTaxData();
+    echo($result);    
   }
   
 ?>
