@@ -18,10 +18,4 @@ if ( ! defined( 'WPINC' ) ) {
 
 // Initiate plugin
 require_once __DIR__ . '/includes/include-plugin.php';
-/* 
-*
-*	Was hoping this would show me I'm looking in the right place. The above is like the examples but acts like nothing happens.
-* 	echo(__DIR__ . '/includes/include-plugin.php');
-*
-*/
 

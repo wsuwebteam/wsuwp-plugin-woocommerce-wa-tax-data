@@ -105,6 +105,25 @@ class TaxQuery
         $Row = "<tr><td>" . $orderID . "</td><td>" . $ShipDate . "</td><td>" . $CustomerName . "</td><td>" .  $CompanyName;
         $Row .= "</td><td>" .  $AddressLine1 . "</td><td>"  . $AddressLine2 . "</td><td>" . $City . "</td><td>"  . $State;
         $Row .= "</td><td>" .  $Zip .  "</td><td>"  . $Tax . "</td><td>"  . $TaxCode  . "</td></tr>";
+        
+        /******************************
+         *  add datarow to the csv file
+         ****************************
+            $modified_values = array(
+            $OrderID,
+            $ShipDate,
+            $CustomoerFName . " " . $CustomoerLName,
+            $CompanyName,
+            $AddressLine1,
+            $AddressLine2,
+            $City,
+            $State,
+            $Zip,
+            $Tax,                    
+            $TaxCode 
+        );
+        //var_dump($modified_values);
+        fputcsv( $output, $modified_values );*/
         return $Row;
     }
 
@@ -148,24 +167,6 @@ class TaxQuery
             $OrderID = $order->ID;
             $TableOut .= self::OutputTableRow($OrderID, $TaxByCode);
             
-            /******************************
-             *  add datarow to the csv file
-             ****************************
-             $modified_values = array(
-                $OrderID,
-                $ShipDate,
-                $CustomoerFName . " " . $CustomoerLName,
-                $CompanyName,
-                $AddressLine1,
-                $AddressLine2,
-                $City,
-                $State,
-                $Zip,
-                $Tax,                    
-                $TaxCode 
-            );
-            //var_dump($modified_values);
-            fputcsv( $output, $modified_values );*/
         }
 
         // close the table
