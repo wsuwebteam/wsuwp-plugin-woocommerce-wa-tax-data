@@ -1,7 +1,7 @@
-<?php
+<?php namespace WSUWP\Plugin\WA_Tax_Query;
 /**
  * Plugin Name: WSUWP plugin woocommerce WA tax data
- * Plugin URI: https://web.wsu.edu/
+ * Plugin URI: https://github.com/wsuwebteam/wsuwp-plugin-woocommerce-wa-tax-data
  * Description: Allows for finding all the WA tax codes and amounts for a given time frame.
  * Version: 1.0.0
  * Requires PHP: 7.0

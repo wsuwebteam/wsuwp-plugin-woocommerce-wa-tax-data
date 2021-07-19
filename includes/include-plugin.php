@@ -1,16 +1,25 @@
-<?php namespace WSUWP\Plugin\WSUWP\Plugin\WA_Tax_Query;
+<?php namespace WSUWP\Plugin\WA_Tax_Query;
 
 
-class Plugin {
+class Plugin 
+{
 
 	protected static $version = '1.0.1';
+
+
+	public function __construct() {
+
+		require_once self::get('class_dir') . '/class-tax-query.php';
+
+	}
 
 	/****************************
 	 * 
 	 *  Function to provide GET access to properties.
 	 * 
 	 ***************************/
-	public static function get( $property ) {
+	public static function get( $property ) 
+	{
 
 		switch ( $property ) {
 
@@ -36,20 +45,20 @@ class Plugin {
 
 	}
 
-	public function init() {
-
-		//require_once __DIR__ . '/include-post-query.php';
-
-		//require_once __DIR__ . '/include-save-post.php';
-
-		//require_once __DIR__ . '/include-post-content.php';
-		//if ( is_admin() ) {
-
-			//require_once __DIR__ . '/include-metabox.php';
-
-		//}
-
+	public static function addToNav() 
+	{
+		add_submenu_page('tools.php', 'WA Tax Data', 'WooTaxes', 'administrator', 'wa-tax-data', array(__CLASS__, 'renderPage'), 5);	
 	}
+
+	public static function renderPage()
+	{
+		include Plugin::get('template_dir').'/form.php';
+	}
+
+	public function init() 
+	{
+		add_action('admin_menu', array( __CLASS__, 'addToNav' ));
+	}	
 
 }
 
