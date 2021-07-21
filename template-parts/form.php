@@ -11,11 +11,11 @@
   }
 </style>
 <script>
-  $( function() {
+  jQuery(document).ready( function($) {
     $( "#txtSDate" ).datepicker();
   });
 
-  $( function() {
+  jQuery(document).ready( function($) {
     $( "#txtEDate" ).datepicker();
   } );
 </script>
