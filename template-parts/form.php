@@ -9,6 +9,7 @@
   td{
     text-align: left;
   }
+  
 </style>
 <script>
   jQuery(document).ready( function($) {
