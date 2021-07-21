@@ -57,7 +57,6 @@ class Plugin
 
 	public static function wpse_enqueue_datepicker() {
 		// Load the datepicker script (pre-registered in WordPress).
-		echo("<br/><br/><br/><br/><div>adding the date picker</div>");
 		wp_enqueue_script( 'jquery-ui-datepicker' );
 	
 		// You need styling for the datepicker. For simplicity I've linked to the jQuery UI CSS on a CDN.
