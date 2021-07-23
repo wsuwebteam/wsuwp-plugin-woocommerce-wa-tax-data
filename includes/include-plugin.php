@@ -61,7 +61,7 @@ class Plugin
 	
 		// You need styling for the datepicker. For simplicity I've linked to the jQuery UI CSS on a CDN.
 		wp_register_style( 'jquery-ui', 'https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css' );
-		//wp_enqueue_style( 'jquery-ui' );  
+		wp_enqueue_style( 'jquery-ui' );  
 	}
 
 	public function init() 
