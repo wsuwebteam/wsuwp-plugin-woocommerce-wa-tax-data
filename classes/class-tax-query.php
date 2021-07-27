@@ -75,7 +75,7 @@ class TaxQuery
     /*****************
      *  Output the row
      ****************/
-    public static function OutputTableRow($orderID, &$TaxAggregate)
+    public static function OutputTableRow($orderID, &$TaxAggregate, $modified_values)
     {
         $Row = "";
         $ShipDate = date("m/d/Y", get_post_meta( $orderID, '_date_completed', true ));//get_post_meta( $order->ID, '_date_completed', true );            
@@ -108,7 +108,7 @@ class TaxQuery
         
         /******************************
          *  add datarow to the csv file
-         ****************************
+         ****************************/
             $modified_values = array(
             $OrderID,
             $ShipDate,
@@ -123,7 +123,6 @@ class TaxQuery
             $TaxCode 
         );
         //var_dump($modified_values);
-        fputcsv( $output, $modified_values );*/
         return $Row;
     }
 
@@ -159,15 +158,36 @@ class TaxQuery
         //  Start output layout
         $TableOut = self::TableStart();
 
+        $fileName = date("Y-m-d") . "_taxfile.csv";
+        
+        /******************************************************
+         * Set up headers for streaming output csv
+         *****************************************************/
+        header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+        header('Content-Description: File Transfer');
+        header("Content-type: text/csv");
+        header("Content-Disposition: attachment; filename={$fileName}");
+        header("Expires: 0");
+        header("Pragma: public");
+
+        $fh = @fopen( 'php://output', 'w');
+        $headerDisplayed = false;
         /*************************************************
          *  Set up each orders data to make an export row.
          ************************************************/
         foreach ( $orders as $order ) 
         {   
             $OrderID = $order->ID;
-            $TableOut .= self::OutputTableRow($OrderID, $TaxByCode);
-            
+            $TableOut .= self::OutputTableRow($OrderID, $TaxByCode, $csvArray);  
+            if( !$headerDisplayed )          
+            {
+                fputcsv($fh, array_keys($csvArray));
+                $headerDisplayed = true;
+            }
+            fputcsv( $output, $csvArray );
         }
+        
+        fclose($fh);
 
         // close the table
         $TableOut .= self::TableStop();
